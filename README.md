@@ -56,7 +56,7 @@ Two buit-in static rule sets block network-level advertising and tracker request
 <sub><b>###########</b></sub>
 </p>
 
-<pre>1.      Download the Repositorie</pre>
+<pre>1.      Download the Repositorie (Code -> Download ZIP) and extract folder locally</pre>
 <pre>2.      Open your browser extensions page and enable Developer mode</pre>
 <pre>3.      Click Load unpacked -> select the liminalpoint folder</pre>
 <pre>4.      Pin the extension -> done!</pre>
