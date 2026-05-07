@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.bunny.net">
+  <link href="https://fonts.bunny.net/css?family=nunito:400,500,600,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0f0d12;
+      --s1:      #19171d;
+      --s2:      #1d1b22;
+      --s3:      #17141b;
+      --acc:     #d0bcff;
+      --acc2:    #9a82db;
+      --acc-dim: rgba(208,188,255,0.12);
+      --acc-brd: rgba(208,188,255,0.22);
+      --ink:     #e6e1e5;
+      --ink2:    #cdcad0;
+      --ink3:    #938f99;
+      --ink4:    #45414a;
+      --sans:    'Nunito', system-ui, sans-serif;
+    }
+
+    html, body {
+      width: 375px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      color-scheme: dark;
+      user-select: none;
+    }
+
+    html { scrollbar-width: thin; scrollbar-color: rgba(208,188,255,0.28) transparent; }
+    html::-webkit-scrollbar { width: 8px; }
+    html::-webkit-scrollbar-track { background: transparent; }
+    html::-webkit-scrollbar-thumb {
+      background: rgba(208,188,255,0.24); border-radius: 999px;
+      border: 2px solid transparent; background-clip: padding-box;
+    }
+    html::-webkit-scrollbar-thumb:hover { background: rgba(208,188,255,0.4); }
+
+    a {color: inherit; text-decoration: none;}
+
+    /* ------ Header ------ */
+    .hd { padding: 18px 18px 14px; display: flex; align-items: center; justify-content: space-between; }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-mark { width: 36px; height: 36px; flex-shrink: 0; }
+    .logo-mark svg { display: block; }
+    .logo-name { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -.2px; display: block; }
+    .logo-sub  { font-size: 11px; font-weight: 500; color: var(--ink3); display: block; margin-top: 1px; }
+
+    /* ------ Toggle ------ */
+    .tgl { position: relative; width: 50px; height: 28px; }
+    .tgl input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .tgl-t {
+      position: absolute; inset: 0; border-radius: 14px;
+      background: var(--s3); border: 1.5px solid var(--ink4);
+      cursor: pointer; transition: background .25s, border-color .25s;
+    }
+    .tgl-t::after {
+      content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%;
+      top: 50%; left: 2px; background: var(--ink4); transform: translateY(-50%);
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), background .25s;
+    }
+    .tgl input:checked ~ .tgl-t { background: var(--acc-dim); border-color: var(--acc); }
+    .tgl input:checked ~ .tgl-t::after { transform: translate(22px,-50%); background: var(--acc); }
+
+    /* ------ Chip row ------ */
+    .chip-row { padding: 0 18px 14px; display: flex; align-items: center; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; background: var(--s2); color: var(--ink3);
+      border: 1px solid var(--s3); transition: all .3s;
+    }
+    body.active .chip { background: var(--acc-dim); border-color: var(--acc-brd); color: var(--acc); }
+    .chip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink4); transition: background .3s; }
+    body.active .chip-dot { background: var(--acc); animation: blink 2.5s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .chip-age { font-size: 11px; font-weight: 500; color: var(--ink4); }
+
+    /* ------ Cards ------ */
+    .card { margin: 0 12px 8px; background: var(--s1); border-radius: 24px; overflow: hidden; }
+    .card-inner { padding: 16px; }
+    .sec-label {
+      font-size: 10px; font-weight: 700; color: var(--ink3);
+      letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .sec-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .sec-ct { font-size: 11px; font-weight: 700; color: var(--acc2); }
+
+    .id-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .id-cell { background: var(--s2); border-radius: 14px; padding: 10px 12px; }
+    .id-key  { font-size: 10px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+    .id-val  { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.2; transition: color .3s; }
+    .id-val.sm { font-size: 12px; }
+    body.active .id-val { color: var(--acc); }
+    .ua-pill {
+      background: var(--s2); border-radius: 10px; padding: 7px 11px;
+      font-size: 10px; font-weight: 500; color: var(--ink3);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .hw-cell { background: var(--s2); border-radius: 14px; padding: 11px 12px; }
+    .hw-key  { font-size: 10px; font-weight: 600; color: var(--ink4); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+    .hw-val  { font-size: 13px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+    .hw-val.acc { color: var(--acc); }
+    .hw-sub  { font-size: 10px; font-weight: 500; color: var(--ink4); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill {
+      font-size: 10px; font-weight: 600; padding: 4px 11px; border-radius: 20px;
+      background: var(--s2); color: var(--ink4); transition: all .25s;
+    }
+    body.active .pill { background: var(--acc-dim); color: var(--acc); }
+
+    /* ------ Blocked card ------ */
+    .block-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .block-cell {
+      background: var(--s2);
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+      transition: border-color .35s;
+    }
+    body.active .block-cell { border-color: var(--acc-brd); }
+
+    .block-icon {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink4);
+      transition: color .35s;
+      width: 15px; height: 15px;
+    }
+    body.active .block-icon { color: var(--acc2); }
+
+    .block-count {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink4);
+      line-height: 1;
+      margin-bottom: 3px;
+      font-variant-numeric: tabular-nums;
+      transition: color .4s;
+    }
+    body.active .block-count { color: var(--acc); }
+
+    .block-lbl {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--ink4);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      transition: color .3s;
+    }
+    body.active .block-lbl { color: var(--ink3); }
+
+    body.disabled .block-grid { opacity: .38; }
+
+    /* ------ Footer ------ */
+    .ft { padding: 8px 12px 16px; display: flex; gap: 8px; }
+    .btn {
+      flex: 1; height: 46px; border-radius: 22px;
+      font-family: var(--sans); font-size: 13px; font-weight: 700;
+      cursor: pointer; border: none;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: all .15s;
+    }
+    .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .btn-ghost { background: var(--s2); color: var(--ink2); }
+    .btn-ghost svg { fill: var(--ink2); }
+    .btn-ghost:hover { background: var(--s3); }
+    .btn-pri { background: var(--acc); color: #1d1b20; }
+    .btn-pri svg { fill: #1d1b20; }
+    .btn-pri:hover { background: #e8d8ff; }
+    .btn-pri:disabled { opacity: .3; cursor: not-allowed; }
+
+    body.disabled .id-val  { color: var(--ink4); }
+    body.disabled .hw-val  { color: var(--ink4); }
+    body.disabled .hw-grid { opacity: .5; }
+    body.disabled .pills   { opacity: .35; }
+    body.disabled .ua-pill { opacity: .4; }
+  </style>
+</head>
+<body>
+
+  <header class="hd">
+    <div class="logo-area">
+      <div class="logo-mark">
+        <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lp-bg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#2e2b33"/>
+              <stop offset="100%" stop-color="#1a1720"/>
+            </linearGradient>
+            <radialGradient id="lp-sphere" cx="38%" cy="32%" r="62%">
+              <stop offset="0%" stop-color="#18161e"/>
+              <stop offset="100%" stop-color="#080609"/>
+            </radialGradient>
+            <radialGradient id="lp-pupil-g" cx="30%" cy="25%" r="70%">
+              <stop offset="0%" stop-color="#d0bcff"/>
+              <stop offset="55%" stop-color="#9a82db"/>
+              <stop offset="100%" stop-color="#5a3f9a"/>
+            </radialGradient>
+            <radialGradient id="lp-spec" cx="28%" cy="22%" r="40%">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </radialGradient>
+            <filter id="lp-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="0.9" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <clipPath id="sphere-clip"><circle cx="19.5" cy="20" r="11.8"/></clipPath>
+          </defs>
+          <rect width="36" height="36" rx="8.5" fill="url(#lp-bg)"/>
+          <circle cx="19.5" cy="20" r="11.8" fill="url(#lp-sphere)"/>
+          <g clip-path="url(#sphere-clip)">
+            <g filter="url(#lp-glow)">
+              <circle cx="15" cy="15.5" r="6.8" fill="url(#lp-pupil-g)"/>
+              <circle cx="15" cy="15.5" r="6.8" fill="url(#lp-spec)"/>
+              <animateTransform attributeName="transform" type="translate"
+                values="0,0; 2.6,-1.6; 3.0,1.8; 0.4,3.2; -2.2,1.4; -2.6,-0.8; 0,0"
+                keyTimes="0; 0.18; 0.38; 0.56; 0.72; 0.88; 1"
+                dur="6s" repeatCount="indefinite" calcMode="spline"
+                keySplines="0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1; 0.42 0 0.58 1"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <span class="logo-name">LiminalPoint</span>
+        <span class="logo-sub">Fingerprint Guard • <a href="https://github.com/ch-xedt/LiminalPoint" target="_blank">@ch-xedt</a></span>
+      </div>
+    </div>
+    <label class="tgl">
+      <input type="checkbox" id="main-toggle">
+      <div class="tgl-t"></div>
+    </label>
+  </header>
+
+  <div class="chip-row">
+    <div class="chip">
+      <div class="chip-dot"></div>
+      <span id="status-text">Inactive</span>
+    </div>
+    <span class="chip-age" id="status-time"></span>
+  </div>
+
+  <!-- Identity -->
+  <div class="card">
+    <div class="card-inner">
+      <div class="sec-label">Identity</div>
+      <div class="id-grid">
+        <div class="id-cell">
+          <div class="id-key">Browser</div>
+          <div class="id-val" id="val-browser">—</div>
+        </div>
+        <div class="id-cell">
+          <div class="id-key">Platform</div>
+          <div class="id-val" id="val-platform">—</div>
+        </div>
+        <div class="id-cell">
+          <div class="id-key">Language</div>
+          <div class="id-val sm" id="val-lang">—</div>
+        </div>
+        <div class="id-cell">
+          <div class="id-key">Timezone</div>
+          <div class="id-val sm" id="val-tz">—</div>
+        </div>
+      </div>
+      <div class="ua-pill" id="val-ua" title="">—</div>
+    </div>
+  </div>
+
+  <!-- Hardware -->
+  <div class="card">
+    <div class="card-inner">
+      <div class="sec-label">Hardware</div>
+      <div class="hw-grid">
+        <div class="hw-cell">
+          <div class="hw-key">CPU</div>
+          <div class="hw-val" id="val-hw">—</div>
+          <div class="hw-sub" id="val-cpu">—</div>
+        </div>
+        <div class="hw-cell">
+          <div class="hw-key">GPU</div>
+          <div class="hw-val" id="val-webgl">—</div>
+          <div class="hw-sub" id="val-vendor">—</div>
+        </div>
+        <div class="hw-cell">
+          <div class="hw-key">Display</div>
+          <div class="hw-val" id="val-screen">—</div>
+          <div class="hw-sub" id="val-color">—</div>
+        </div>
+        <div class="hw-cell">
+          <div class="hw-key">Battery</div>
+          <div class="hw-val acc" id="val-battery">—</div>
+          <div class="hw-sub" id="val-touch">—</div>
+        </div>
+        <div class="hw-cell" style="grid-column: 1 / -1;">
+          <div class="hw-key">Storage Quota</div>
+          <div class="hw-val" id="val-storage-quota">—</div>
+          <div class="hw-sub" id="val-storage-usage">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blocked this session -->
+  <div class="card">
+    <div class="card-inner">
+      <div class="sec-label">Blocked this session</div>
+
+      <div class="block-grid">
+        <!-- Ads -->
+        <div class="block-cell">
+          <svg class="block-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+          <div class="block-count" id="val-blocked-ads">0</div>
+          <div class="block-lbl">Ads</div>
+        </div>
+
+        <!-- Trackers -->
+        <div class="block-cell">
+          <svg class="block-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+            <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+          <div class="block-count" id="val-blocked-trackers">0</div>
+          <div class="block-lbl">Trackers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Shields -->
+  <div class="card">
+    <div class="card-inner">
+      <div class="sec-row">
+        <div class="sec-label" style="margin-bottom:0">Active Shields</div>
+        <span class="sec-ct" id="shield-count">13 / 13</span>
+      </div>
+      <div class="pills">
+        <span class="pill">Canvas</span>
+        <span class="pill">WebGL</span>
+        <span class="pill">Audio</span>
+        <span class="pill">Fonts</span>
+        <span class="pill">WebRTC</span>
+        <span class="pill">Screen</span>
+        <span class="pill">Hardware</span>
+        <span class="pill">Battery</span>
+        <span class="pill">Plugins</span>
+        <span class="pill">Timing</span>
+        <span class="pill">MediaDevices</span>
+        <span class="pill">Clipboard</span>
+        <span class="pill">Storage</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ft">
+    <button class="btn btn-ghost" id="test-btn">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+      Test
+    </button>
+    <button class="btn btn-pri" id="rotate-btn" disabled>
+      <svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+      New Identity
+    </button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "LiminalPoint",
+  "version": "1.0.0",
+  "description": "Advanced browser privacy and fingerprint protection tool.",
+  "permissions": ["webRequest","storage", "tabs", "declarativeNetRequest", "declarativeNetRequestFeedback", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16":  "icons/Group.png",
+      "48":  "icons/Group 2.png",
+      "128": "icons/Group 3.png"
+    }
+  },
+  "icons": {
+    "16":  "icons/Group.png",
+    "48":  "icons/Group 2.png",
+    "128": "icons/Group 3.png"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "easylist",
+        "enabled": true,
+        "path": "rules_ads.json"
+      },
+      {
+        "id": "easyprivacy",
+        "enabled": true,
+        "path": "rules_tracker.json"
+      }
+    ]
+  },
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.bunny.net; font-src https://fonts.bunny.net; script-src 'self'"
+  }
+}
