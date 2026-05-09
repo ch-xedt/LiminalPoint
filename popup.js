@@ -200,6 +200,7 @@ function render(profile, enabled) {
 function init() {
   chrome.runtime.sendMessage({ type: "GET_PROFILE" }, res => {
     if (chrome.runtime.lastError) {
+      console.warn("[LiminalPoint] Could not reach background service.");
       $("status-text").textContent = "Error";
       return;
     }
@@ -210,10 +211,12 @@ function init() {
 init();
 
 $("rotate-btn").addEventListener("click", () => {
+  console.log("[LiminalPoint] Generating new identity...");
   const btn = $("rotate-btn");
   btn.textContent = "Generating…";
   btn.disabled = true;
   chrome.runtime.sendMessage({ type: "ROTATE_PROFILE" }, res => {
+    console.log("[LiminalPoint] New identity active.");
     btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:#1d1b20;flex-shrink:0"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>New Identity`;
     btn.disabled = false;
     if (chrome.runtime.lastError) return;
@@ -223,6 +226,7 @@ $("rotate-btn").addEventListener("click", () => {
 
 $("main-toggle").addEventListener("change", e => {
   const value = e.target.checked;
+  console.log(`[LiminalPoint] Protection ${value ? "enabled" : "disabled"}`);
   chrome.runtime.sendMessage({ type: "SET_ENABLED", value }, res => {
     if (chrome.runtime.lastError) return;
     render(res?.profile ?? null, value);

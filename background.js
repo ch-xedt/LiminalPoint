@@ -461,19 +461,15 @@ function isProfileComplete(profile) {
 }
 
 // ------ DST-aware UTC offset ------------------------------------------------
-function getRealOffset(tzName) {
+function getRealOffset(timezone) {
   try {
-    const now  = Date.now();
-    const fmt  = new Intl.DateTimeFormat("en-US", {
-      timeZone: tzName,
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      hour12: false,
-    });
-    const parts = fmt.formatToParts(new Date(now)).reduce((a, p) => { a[p.type] = p.value; return a; }, {});
-    const local = Date.UTC(+parts.year, +parts.month - 1, +parts.day, parts.hour === "24" ? 0 : +parts.hour, +parts.minute, +parts.second);
-    return Math.round((now - local) / 60000);
-  } catch (_) { return 0; }
+    const date = new Date();
+    const utc = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
+    const tz  = new Date(date.toLocaleString("en-US", { timeZone: timezone }));
+    return Math.round((utc - tz) / 60000); // Seoul → -540
+  } catch(e) {
+    return 0;
+  }
 }
 
 

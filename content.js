@@ -581,6 +581,42 @@ function getP() {
     return p.timezoneOffset;
   });
 
+// Intl Locale Spoofing
+  const _OrigNF  = Intl.NumberFormat;
+  const _OrigRTF = Intl.RelativeTimeFormat;
+  const _OrigPR  = Intl.PluralRules;
+  const _OrigColl = Intl.Collator;
+  const _OrigDN = Intl.DisplayNames;
+
+  function patchedIntlClass(OrigClass) {
+    return new Proxy(OrigClass, {
+      construct(target, args) {
+        const p = getP();
+        if (p && (!args[0] || args[0] === undefined)) args[0] = p.language;
+        return new target(...args);
+      },
+      apply(target, thisArg, args) {
+        const p = getP();
+        if (p && (!args[0] || args[0] === undefined)) args[0] = p.language;
+        return new target(...args);
+      }
+    });
+  }
+
+  try { Intl.NumberFormat = patchedIntlClass(_OrigNF);   } catch(_) {}
+  try { Intl.RelativeTimeFormat = patchedIntlClass(_OrigRTF);  } catch(_) {}
+  try { Intl.PluralRules = patchedIntlClass(_OrigPR);   } catch(_) {}
+  try { Intl.Collator = patchedIntlClass(_OrigColl); } catch(_) {}
+  try {
+    Intl.DisplayNames = new Proxy(_OrigDN, {
+      construct(target, args) {
+        const p = getP();
+        if (p && (!args[0] || args[0] === undefined)) args[0] = [p.language];
+        return new target(...args);
+      }
+    });
+  } catch(_) {}
+
   // 4. Canvas Noise
   const origGID = CanvasRenderingContext2D.prototype.getImageData;
   const origMeasureText = CanvasRenderingContext2D.prototype.measureText;
@@ -1051,7 +1087,119 @@ if (window.RTCPeerConnection) {
     });
   }
 
-  // 10. Media Queries & Permissions
+  // 10. Geolocation Spoofing
+  if (navigator.geolocation) {
+    const _origGetCurrentPosition = navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);
+    const _origWatchPosition = navigator.geolocation.watchPosition.bind(navigator.geolocation);
+
+    function getFakeCoords(profile) {
+      // Koordinaten passen zur gespooften Timezone
+      const TIMEZONE_COORDS = {
+        "America/New_York":{ lat: 40.7128,lon: -74.0060 },
+        "America/Chicago":{ lat: 41.8781,lon: -87.6298 },
+        "America/Denver":{ lat: 39.7392,lon: -104.9903 },
+        "America/Los_Angeles":{ lat: 34.0522,lon: -118.2437 },
+        "America/Sao_Paulo":{ lat: -23.5505,lon: -46.6333 },
+        "Europe/London":{ lat: 51.5074,lon: -0.1278 },
+        "Europe/Berlin":{ lat: 52.5200,lon: 13.4050 },
+        "Europe/Madrid":{ lat: 40.4168,lon: -3.7038 },
+        "Europe/Paris":{ lat: 48.8566,lon: 2.3522 },
+        "Europe/Oslo":{ lat: 59.9139,lon: 10.7522 },
+        "Europe/Warsaw":{ lat: 52.2297,lon: 21.0122 },
+        "Europe/Amsterdam":{ lat: 52.3676,lon: 4.9041 },
+        "Asia/Tokyo":{ lat: 35.6762,lon: 139.6503 },
+        "Asia/Shanghai":{ lat: 31.2304,lon: 121.4737 },
+        "Asia/Seoul":{ lat: 37.5665,lon: 126.9780 },
+        "Asia/Dubai":{ lat: 25.2048,lon: 55.2708 },
+        "Asia/Bangkok":{ lat: 13.7563,lon: 100.5018 },
+        "Australia/Sydney":{ lat: -33.8688,lon: 151.2093},
+        "Pacific/Auckland":{ lat: -36.8485,lon: 174.7633 },
+        "Pacific/Honolulu":{ lat: 21.3069,lon: -157.8583 },
+      };
+
+      const base = TIMEZONE_COORDS[profile.timezone] || { lat: 40.7128, lon: -74.0060 };
+
+      // Kleines Rauschen damit es nicht immer exakt die Stadtmitte ist
+      const rng = mulberry32(profile.layoutNoiseSeed ^ 0xABC1);
+      const latNoise = ((rng() % 1000) - 500) / 100000; // +-0.005°
+      const lonNoise = ((rng() % 1000) - 500) / 100000;
+
+      return {
+        coords: {
+          latitude: base.lat + latNoise,
+          longitude: base.lon + lonNoise,
+          altitude: null,
+          accuracy: 25 + (rng() % 50),
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      };
+    }
+
+    navigator.geolocation.getCurrentPosition = markNative(function getCurrentPosition(success, error, options) {
+      const profile = getP();
+      if (!profile) return _origGetCurrentPosition(success, error, options);
+      setTimeout(() => success(getFakeCoords(profile)), 50 + Math.random() * 100);
+    });
+
+    navigator.geolocation.watchPosition = markNative(function watchPosition(success, error, options) {
+      const profile = getP();
+      if (!profile) return _origWatchPosition(success, error, options);
+      const id = Math.floor(Math.random() * 1000);
+      setTimeout(() => success(getFakeCoords(profile)), 50 + Math.random() * 100);
+      return id;
+    });
+
+    navigator.geolocation.clearWatch = markNative(function clearWatch(id) {
+      // no-op, haben keinen echten Watcher
+    });
+  }
+
+  // 11. MediaDevices Spoofing
+  if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+    const _origEnumerate = navigator.mediaDevices.enumerateDevices.bind(navigator.mediaDevices);
+
+    navigator.mediaDevices.enumerateDevices = markNative(function enumerateDevices() {
+      const profile = getP();
+      if (!profile) return _origEnumerate();
+
+      // Stabile aber gefälschte Device-IDs basierend auf dem Profil-Seed
+      const rng = mulberry32(profile.layoutNoiseSeed ^ 0xABD1);
+      function fakeId() {
+        return Array.from({ length: 32 }, () => rng().toString(16).padStart(8,"0")).join("").slice(0, 64);
+      }
+      function fakeGroupId() {
+        return Array.from({ length: 16 }, () => rng().toString(16).padStart(8,"0")).join("").slice(0, 32);
+      }
+
+      // Typisches Desktop-Setup: 1 Kamera, 1 Mikrofon, 1 Lautsprecher
+      const groupA = fakeGroupId();
+      const groupB = fakeGroupId();
+
+      const fakeDevices = [
+        { kind: "audioinput",  label: "",deviceId: fakeId(), groupId: groupA },
+        { kind: "audiooutput", label: "", deviceId: fakeId(), groupId: groupA },
+        { kind: "videoinput",  label: "", deviceId: fakeId(), groupId: groupB },
+      ];
+
+      return Promise.resolve(fakeDevices.map(d => {
+        return new Proxy({}, {
+          get(_, prop) {
+            if (prop === "kind") return d.kind;
+            if (prop === "label") return d.label;
+            if (prop === "deviceId") return d.deviceId;
+            if (prop === "groupId")  return d.groupId;
+            if (prop === "toJSON") return () => ({ kind: d.kind, label: d.label, deviceId: d.deviceId, groupId: d.groupId });
+            return undefined;
+          }
+        });
+      }));
+    });
+  }
+
+  // 12. Media Queries & Permissions
   if (window.matchMedia) {
     const origMM = window.matchMedia;
     window.matchMedia = markNative(function(q) {
@@ -1071,7 +1219,7 @@ if (window.RTCPeerConnection) {
     });
   }
 
-  // 11. Speech Synthesis -> voice list is OS/language specific
+  // 13. Speech Synthesis -> voice list is OS/language specific
   if (window.speechSynthesis) {
     const VOICE_SETS = {
       windows: (lang) => [
@@ -1126,7 +1274,7 @@ if (window.RTCPeerConnection) {
     }
   }
 
-  // 12. navigator.connection - hide real network type
+  // 14. navigator.connection - hide real network type
   (function patchConnection() {
     const CONNECTION_PROFILES = [
       { effectiveType: "4g", downlink: 45,  rtt: 15, saveData: false },
@@ -1193,7 +1341,7 @@ if (window.RTCPeerConnection) {
 
   })();
 
-  // 13. navigator.keyboard -> hide real keyboard layout
+  // 15. navigator.keyboard -> hide real keyboard layout
   if (navigator.keyboard && typeof navigator.keyboard.getLayoutMap === "function") {
     const origGetLayoutMap = navigator.keyboard.getLayoutMap.bind(navigator.keyboard);
     const LAYOUT_MAPS = {
@@ -1218,7 +1366,7 @@ if (window.RTCPeerConnection) {
     });
   }
 
-  // 14. navigator.mediaCapabilities -> normalize codec responses
+  // 16. navigator.mediaCapabilities -> normalize codec responses
   if (navigator.mediaCapabilities) {
     const origDecodingInfo = navigator.mediaCapabilities.decodingInfo.bind(navigator.mediaCapabilities);
 
@@ -1241,7 +1389,7 @@ if (window.RTCPeerConnection) {
     });
   }
 
-  // 15. Storage Spoofing (komplett)
+  // 17. Storage Spoofing
   if (navigator.storage) {
 
     if (navigator.storage.estimate) {

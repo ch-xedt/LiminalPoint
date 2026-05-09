@@ -12,11 +12,13 @@
     // 1. Eine Challenge vom Background anforndern
     chrome.runtime.sendMessage({ type: "GENERATE_HANDSHAKE_CHALLENGE" }, (response) => {
       if (chrome.runtime.lastError || !response || !response.challenge) {
-        console.error("[LiminalPoint] Handshake failed: Could not get challenge");
+        console.error("[LiminalPoint] Handshake failed: Could not get challenge.");
         return;
       }
 
       const challenge = response.challenge;
+      console.log("[LiminalPoint] Securing connection to page...");
+
 
       // 2. Warten auf die Antwort von content.js
       function waitForPort(onPort, timeout = 5000) {
@@ -36,7 +38,7 @@
           
           clearTimeout(timer);
           window.removeEventListener("message", handler);
-          
+          console.log("[LiminalPoint] Connection established."); 
           onPort(port);
         }
 
@@ -49,12 +51,13 @@
       if (targetOrigin && targetOrigin !== "null") {
         window.postMessage({ type: "HANDSHAKE_CHALLENGE", challenge: challenge }, targetOrigin);
       } else {
-        console.warn("[LiminalPoint] Cannot determine safe origin for postMessage, skipping.");
+        console.warn("[LiminalPoint] Could not establish secure connection on this page.");
         // Handshake wird nicht initiiert, Extension ist auf dieser Seite inaktiv
       }
 
       // 4. Warte auf die Antwort (Port)
       waitForPort((port) => {
+        console.log("[LiminalPoint] Requesting identity profile...");
         // Port erhalten, jetzt Profil anfordern
         requestProfile(port);
       });
@@ -69,6 +72,7 @@
           setTimeout(() => requestProfile(port, attempt + 1), attempt * 120);
           return;
         }
+        console.warn("[LiminalPoint] Could not load profile, extension disabled for this page.");
         port.postMessage({ enabled: false, profile: null });
         port.close();
         return;
@@ -83,7 +87,9 @@
       }
 
       port.postMessage({ enabled, profile });
+      console.log("[LiminalPoint] Profile sent to page, connection closing.");
       port.close();
+      console.log(`[LiminalPoint] Profile loaded, spoofing ${enabled ? "active" : "inactive"}`);
     });
   }
 
