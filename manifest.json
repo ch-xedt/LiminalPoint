@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LiminalPoint",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Advanced browser privacy and fingerprint protection tool.",
   "permissions": ["webRequest","storage", "tabs", "declarativeNetRequest", "declarativeNetRequestFeedback", "scripting"],
   "host_permissions": ["<all_urls>"],
