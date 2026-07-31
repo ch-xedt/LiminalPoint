@@ -36,7 +36,7 @@ Consistent within a session. Unrecognizable across them.<br>
 <sub><b>Liminal ~ existing at a threshold</b></sub>
 </p><br>
 
-<p align="center"><code>User-Agent</code> <code>Canvas</code> <code>WebGL</code> <code>Timing</code>
+<p align="center"><code>User-Agent</code> <code>Search-Engine</code> <code>Canvas</code> <code>WebGL</code> <code>Timing</code>
   <code>Audio</code> <code>Screen</code> <code>Hardware</code> <code>Keyboard</code> <code>Timezone</code>  
   <code>Geolocation</code> <code>Languages</code> <code>Network</code> <code>Battery</code> <code>Voices</code> 
   <code>Media</code> <code>WebRTC</code> <code>Storage</code> <code>Platform</code> <code>Fonts</code> 

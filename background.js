@@ -455,6 +455,7 @@ function isProfileComplete(profile) {
     num(profile.timingNoiseSeed) &&
     num(profile.layoutNoiseSeed) &&
     num(profile.webglNoiseSeed) &&
+    str(profile.spoofedReferer) &&
     num(profile.generatedAt) &&
     ["light", "dark"].includes(profile.prefersColorScheme)
   );
@@ -545,6 +546,14 @@ function generateProfile() {
   const screen = rand(device.screens);
   const gpu = rand(device.gpus);
 
+  const SEARCH_ENGINE_REFERERS = [
+      "https://www.google.com/",
+      "https://www.bing.com/",
+      "https://duckduckgo.com/",
+      "https://search.brave.com/"
+    ];
+
+
   function generateSecureNoiseSeed() {
     const array = new Uint32Array(1);
     crypto.getRandomValues(array);
@@ -576,6 +585,7 @@ function generateProfile() {
     prefersColorScheme: rand(COLOR_SCHEMES),
     plugins: rand(PLUGINS_CONFIG),
     maxTouchPoints: device.maxTouchPoints,
+    spoofedReferer: rand(SEARCH_ENGINE_REFERERS),
 
 // Noise Seeds mit sicherer Zufallszahl
     canvasNoiseSeed: generateSecureNoiseSeed(),
@@ -614,6 +624,7 @@ async function applyRulesets(enabled) {
 
 // ------ Header spoofing via declarativeNetRequest ------------------
 const HEADER_RULE_ID = 1;
+const REFERER_RULE_ID = 2;
 
 const ALL_RESOURCE_TYPES = [
   "main_frame","sub_frame","stylesheet","script","image",
@@ -624,7 +635,7 @@ const ALL_RESOURCE_TYPES = [
 const cfBypassTabs = new Set();
 
 async function applyHeaderRules(profile, enabled) {
-  const removeRuleIds = [HEADER_RULE_ID];
+  const removeRuleIds = [HEADER_RULE_ID,REFERER_RULE_ID];
   const addRules = [];
 
   if (enabled && profile?.userAgent) {
@@ -648,6 +659,10 @@ async function applyHeaderRules(profile, enabled) {
       requestHeaders.push({ header: "Sec-CH-UA",operation: "remove" });
       requestHeaders.push({ header: "Sec-CH-UA-Mobile",operation: "remove" });
       requestHeaders.push({ header: "Sec-CH-UA-Platform",operation: "remove" });
+    }
+
+    if (profile.spoofedReferer) {
+      requestHeaders.push({ header: "Referer", operation: "set", value: profile.spoofedReferer,});
     }
 
     const condition = {

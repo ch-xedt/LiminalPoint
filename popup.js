@@ -52,7 +52,7 @@ function fmt(n) {
 function resetFields() {
   ["val-ua","val-browser","val-platform","val-lang","val-tz",
    "val-cpu","val-hw","val-screen","val-webgl","val-vendor",
-   "val-battery","val-color","val-touch"].forEach(id => {
+   "val-battery","val-color","val-touch","val-referer"].forEach(id => {
     const el = $(id);
     if (el) el.textContent = "—";
   });
@@ -103,6 +103,9 @@ function render(profile, enabled) {
 
   stTxt.textContent = "Active";
   stAge.textContent = formatAge(profile.generatedAt);
+
+  const refEl = $("val-referer");
+  if (refEl) refEl.textContent = profile.spoofedReferer || "—";
 
   const ua = $("val-ua");
   if (ua) {

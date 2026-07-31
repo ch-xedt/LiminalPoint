@@ -13,6 +13,7 @@
 
   const DEFAULT_PROFILE = {
     userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+    spoofedReferer: "https://www.google.com/",
     platform: null,
     oscpu: "Windows NT 10.0; Win64; x64",
     language: "en-US",
@@ -381,7 +382,7 @@ function getP() {
     if (!profile) return _origNow();
     
     const val = _origNow();
-    const noise = (mulberry32(profile.timingNoiseSeed + Math.floor(val))() % 100) / 1000;
+    const noise = (mulberry32(profile.timingNoiseSeed + Math.floor(val))() % 1000) / 1000 - 0.5;
     return val + noise;
   });
 
@@ -1197,7 +1198,72 @@ if (window.RTCPeerConnection) {
         });
       }));
     });
+
+    if (navigator.mediaDevices.getUserMedia) {
+      const _origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+
+      navigator.mediaDevices.getUserMedia = markNative(async function getUserMedia(constraints) {
+        const profile = getP();
+        if (!profile) return _origGetUserMedia(constraints);
+
+        return _origGetUserMedia(constraints);
+      });
+    }
+
+    if (navigator.mediaDevices.getSupportedConstraints) {
+      const _origGetSupportedConstraints = navigator.mediaDevices.getSupportedConstraints.bind(navigator.mediaDevices);
+
+      navigator.mediaDevices.getSupportedConstraints = markNative(function getSupportedConstraints() {
+        const profile = getP();
+        if (!profile) return _origGetSupportedConstraints();
+        return {
+          ..._origGetSupportedConstraints(),
+          width: false,
+          height: false,
+          frameRate: false,
+          facingMode: false,
+          volume: false,
+          echoCancellation: false,
+          noiseSuppression: false,
+        };
+      });
+    }
+
+    if (navigator.mediaDevices.addEventListener) {
+      const _origAddEventListener = navigator.mediaDevices.addEventListener.bind(navigator.mediaDevices);
+      navigator.mediaDevices.addEventListener = markNative(function addEventListener(type, listener, options) {
+        if (type === "devicechange") return;
+        return _origAddEventListener(type, listener, options);
+      });
+    }
+
+    if (navigator.mediaDevices.removeEventListener) {
+      const _origRemoveEventListener = navigator.mediaDevices.removeEventListener.bind(navigator.mediaDevices);
+      navigator.mediaDevices.removeEventListener = markNative(function removeEventListener(type, listener, options) {
+        if (type === "devicechange") return;
+        return _origRemoveEventListener(type, listener, options);
+      });
+    }
+
   }
+
+  if (navigator.permissions && navigator.permissions.query) {
+      const _origQuery = navigator.permissions.query.bind(navigator.permissions);
+
+      navigator.permissions.query = markNative(function query(query) {
+        return _origQuery(query).then(result => {
+          const profile = getP();
+          if (!profile) return result;
+
+          const newResult = { ...result };
+          if (query.name === "camera" || query.name === "microphone") {
+            newResult.state = "prompt";
+          }
+          return newResult;
+        });
+      });
+    }
+
 
   // 12. Media Queries & Permissions
   if (window.matchMedia) {
