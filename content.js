@@ -761,11 +761,15 @@ function getP() {
         const rng = mulberry32((p.webglNoiseSeed + this.canvas.width * this.canvas.height + x + y) >>> 0);
         
         const step = 4;
-        const noiseScale = 25500;
+        const noiseScale = 44000;
         
         for (let i = 0; i < dst.length; i += step) {
-          const noise = ((rng() % 200) - 100) / noiseScale;
-          dst[i] = Math.max(0, Math.min(255, dst[i] + noise * 255));
+          const nR = ((rng() % 200) - 100) / noiseScale;
+          const nG = ((rng() % 200) - 100) / noiseScale;
+          const nB = ((rng() % 200) - 100) / noiseScale;
+          dst[i]     = Math.max(0, Math.min(255, dst[i]     + nR * 255));
+          dst[i + 1] = Math.max(0, Math.min(255, dst[i + 1] + nG * 255));
+          dst[i + 2] = Math.max(0, Math.min(255, dst[i + 2] + nB * 255));
         }
       }
       
@@ -815,6 +819,53 @@ function getP() {
     }
     return copy;
   });
+
+  (function patchAnalyserNode() {
+    if (typeof AnalyserNode === "undefined") return;
+ 
+    function noiseArray(arr, seedS, magnitude, isFloat, clampMin, clampMax) {
+      const p = getP();
+      if (!p) return;
+      const rng = mulberry32((p.audioNoiseSeed + seedS) >>> 0);
+      for (let i = 0; i < arr.length; i += 2) {
+        const delta = ((rng() % 200) - 100) / 100 * magnitude;
+        let v = arr[i] + delta;
+        if (!isFloat) v = Math.round(v);
+        if (clampMin !== undefined) v = v < clampMin ? clampMin : v;
+        if (clampMax !== undefined) v = v > clampMax ? clampMax : v;
+        arr[i] = v;
+      }
+    }
+    
+    const origFloatFreq = AnalyserNode.prototype.getFloatFrequencyData;
+     AnalyserNode.prototype.getFloatFrequencyData = markNative(function (array) {
+      const r = origFloatFreq.call(this, array);
+      noiseArray(array, 1, 0.4, true);
+      return r;
+    });
+ 
+    const origByteFreq = AnalyserNode.prototype.getByteFrequencyData;
+    AnalyserNode.prototype.getByteFrequencyData = markNative(function (array) {
+      const r = origByteFreq.call(this, array);
+      noiseArray(array, 2, 2, false, 0, 255);
+      return r;
+    });
+ 
+    const origFloatTime = AnalyserNode.prototype.getFloatTimeDomainData;
+    AnalyserNode.prototype.getFloatTimeDomainData = markNative(function (array) {
+      const r = origFloatTime.call(this, array);
+      noiseArray(array, 3, 0.01, true, -1, 1);
+      return r;
+    });
+ 
+    const origByteTime = AnalyserNode.prototype.getByteTimeDomainData;
+    AnalyserNode.prototype.getByteTimeDomainData = markNative(function (array) {
+      const r = origByteTime.call(this, array);
+      noiseArray(array, 4, 2, false, 0, 255);
+      return r;
+    });
+  })();
+
 
 // 8. WebRTC (IP Leak Protection)
 
